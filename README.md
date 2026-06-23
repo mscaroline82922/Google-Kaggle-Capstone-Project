@@ -11,6 +11,37 @@ Sensi utilizes a multi-layered architecture to separate high-risk ingestion from
 3.  **Comms & Media Agent (Skill Layer)**: Uses procedural memory (Agent Skills) to map telemetry to GenMedia pipelines (Gemini 2.0 & Veo).
 4.  **Security Guard Node (Self-Healing Runtime)**: Monitors execution streams, intercepts exceptions, and performs autonomous code repair.
 
+### 🔄 System Flow Diagram
+```text
+[ Natural Language Intent ]
+             │
+             ▼
+  ┌─────────────────────┐
+  │  Sensi Orchestrator │◀──────────────────┐
+  └─────────────────────┘                   │
+             │                              │
+    ┌────────┴─────────┐                    │ (Self-Healing Loop)
+    ▼                  ▼                    │
+┌─────────────┐  ┌───────────────┐          │
+│ Logistics   │  │ Comms/Media   │          │
+│ Agent (MCP) │  │ Agent (Skill) │          │
+└─────────────┘  └───────────────┘          │
+    │                  │                    │
+    ▼                  ▼                    │
+┌─────────────┐  ┌───────────────┐          │
+│  MCP Server │  │ GenMedia Eng. │          │
+└─────────────┘  └───────────────┘          │
+    │                  │                    │
+    └────────┬─────────┘                    │
+             ▼                              │
+  ┌─────────────────────┐                   │
+  │ Security Guard Node │───────────────────┘
+  └─────────────────────┘
+             │
+             ▼
+[ Cryptographically Signed Alert ]
+```
+
 ## 🛠️ Tool Stack
 
 | Layer | Recommended Tool | Rationale |
@@ -18,6 +49,7 @@ Sensi utilizes a multi-layered architecture to separate high-risk ingestion from
 | Orchestration | **Google ADK** | Native agent schemas and lifecycle hooks. |
 | Interoperability | **MCP Python SDK** | Safe tool sandboxing and data abstraction. |
 | Media Foundation | **Vertex AI GenMedia** | Production-grade 1080p visualization (Veo). |
+| UI Framework | **Gradio** | Interactive crisis command center prototype. |
 | Self-Healing | **Custom Guard Node** | Automated runtime error correction. |
 
 ## 📁 Repository Structure
@@ -25,8 +57,9 @@ Sensi utilizes a multi-layered architecture to separate high-risk ingestion from
 ```text
 sensi_workspace/
 ├── .env                        # Secure environment configuration (Mocked)
+├── app.py                      # Gradio Crisis Command Center UI
 ├── agents/
-│   ├── orchestrator.py        # ADK Topology & Agent definitions
+│   ├── orchestrator.py        # Topology coordinator
 │   └── guard_node.py          # Self-healing runtime logic
 ├── mcp_server/
 │   └── server.py              # FastMCP server with validated tools
@@ -37,26 +70,21 @@ sensi_workspace/
         └── assets/            # Generated media artifacts (Simulated)
 ```
 
-## 🚀 Getting Started
+## 🚀 Reproduction Instructions
 
 ### 1. Prerequisites
 - Python 3.10+
-- `google-adk`, `mcp`, `pydantic`
+- Dependencies: `pip install google-adk mcp pydantic python-dotenv gradio`
 
-### 2. Setup
+### 2. Launching the Command Center
+Execute the following from the project root:
 ```bash
-pip install google-adk mcp pydantic python-dotenv
+python sensi_workspace/app.py
 ```
+This will launch a Gradio interface. Enter a command like *"Coordinate emergency advisory for Sector 7"* to trigger the autonomous multi-agent pipeline.
 
-### 3. Run the MCP Server
-```bash
-python sensi_workspace/mcp_server/server.py
-```
-
-### 4. Run Runtime Verification (Self-Healing Demo)
-```bash
-python sensi_workspace/agents/guard_node.py
-```
+### 3. Demonstrating Self-Healing
+To see the **Security Guard Node** in action, you can manually introduce a syntax error into `sensi_workspace/skills/broadcast_generation/scripts/generate_alert.py`. The Orchestrator will detect the error, trigger the Guard Node's healing loop, and re-verify execution automatically.
 
 ## 🔐 Security & Compliance
 - **Secrets Management**: Credentials are kept in `.env` and should be mapped to Kaggle User Secrets in production.
