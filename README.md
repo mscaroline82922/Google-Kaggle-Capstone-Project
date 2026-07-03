@@ -7,65 +7,73 @@ Project "Sensi" is a production-grade multi-agent system designed to safeguard h
 Sensi utilizes a multi-layered topology to ensure mission-critical reliability:
 
 1.  **Sensi Orchestrator (Topology Layer)**: Built with Google ADK. Coordinates specialized agents for Seismic and Thermal analysis.
-2.  **Logistics Agent (MCP Interoperability)**: Accesses high-accuracy telemetry through a sandboxed MCP Server (Seismic magnitude/depth, Thermal heat indexes).
+2.  **Logistics Agent (MCP Interoperability)**: Accesses high-accuracy telemetry through a sandboxed MCP Server.
 3.  **Comms Agent (Procedural Skills)**: Maps telemetry thresholds to multi-modal GenMedia (Gemini/Veo) to generate 1080p evacuation visuals and signed alerts.
-4.  **Security Guard Node (Self-Healing Runtime)**: Monitors prediction scripts for errors, intercepts exceptions, and performs autonomous repair to ensure 100% system availability.
+4.  **Security Guard Node (Self-Healing Runtime)**: Monitors prediction scripts for errors, intercepts exceptions, and performs autonomous repair.
+
+### 📂 Structural Layout
+```text
+sensi_workspace/
+├── agents/
+│   ├── orchestrator.py    # Core Multi-Agent Logic
+│   └── guard_node.py      # Self-Healing Security Node
+├── mcp_server/
+│   └── server.py          # FastMCP Telemetry Server (Sandboxed)
+├── skills/
+│   └── broadcast_generation/
+│       ├── SKILL.md       # Procedural Memory Documentation
+│       ├── scripts/       # Transformation Logic
+│       └── references/    # Safety SOPs
+├── api.py                 # FastAPI Backend (Lovable Integration)
+├── app.py                 # Gradio Crisis Command Center
+└── notebook_cli.py        # Interactive Kaggle Notebook UI
+```
 
 ### 🔄 System Flow
-```text
-[ Seismic / Thermal Intent ]
-             │
-             ▼
-  ┌─────────────────────┐
-  │  Sensi Orchestrator │◀──────────────────┐
-  └─────────────────────┘                   │
-             │                              │
-    ┌────────┴─────────┐                    │ (Self-Healing Loop)
-    ▼                  ▼                    │
-┌─────────────┐  ┌───────────────┐          │
-│ Logistics   │  │ Comms/Media   │          │
-│ Agent (MCP) │  │ Agent (Skill) │          │
-└─────────────┘  └───────────────┘          │
-    │                  │                    │
-    ▼                  ▼                    │
-┌─────────────┐  ┌───────────────┐          │
-│  MCP Server │  │ GenMedia Eng. │          │
-└─────────────┘  └───────────────┘          │
-    │                  │                    │
-    └────────┬─────────┘                    │
-             ▼                              │
-  ┌─────────────────────┐                   │
-  │ Security Guard Node │───────────────────┘
-  └─────────────────────┘
-             │
-             ▼
-[ Cryptographically Signed Life-Safety Alert ]
+```mermaid
+graph TD
+    A[Natural Language Intent] --> B[Sensi Orchestrator]
+    B --> C[Logistics Agent]
+    B --> D[Comms/Media Agent]
+    C --> E[MCP Server: Telemetry]
+    D --> F[GenMedia Engine: Veo/Gemini]
+    E --> G[Security Guard Node]
+    F --> G
+    G -- "Self-Healing Loop" --> B
+    G --> H[Cryptographically Signed Alert]
 ```
 
 ## 🛠️ Tool Stack
 
-| Layer | Recommended Tool | Rationale |
+| Layer | Tool | Rationale |
 | :--- | :--- | :--- |
 | Orchestration | **Google ADK** | Professional multi-agent coordination. |
-| Interoperability | **MCP (FastMCP)** | Secure telemetry sandboxing. |
+| Interoperability | **MCP (Model Context Protocol)** | Secure telemetry sandboxing. |
 | Media Foundation | **Vertex AI GenMedia** | Production-grade 1080p visuals (Veo). |
-| Self-Healing | **Custom Guard Node** | Mission-critical runtime resilience. |
+| Self-Healing | **Security Guard Node** | Mission-critical runtime resilience. |
+| Frontend | **React + Tailwind** | Modern, "Lovable" user interface. |
 
 ## 🚀 Reproduction
 
 ### 1. Prerequisites
-`pip install google-adk mcp pydantic python-dotenv gradio`
+```bash
+pip install google-adk mcp pydantic python-dotenv fastapi uvicorn gradio
+```
 
-### 2. Launch the Hazard Monitor
+### 2. Launch the Crisis Command Center (Gradio)
 ```bash
 python sensi_workspace/app.py
 ```
-Trigger a **"Seismic Prediction Loop"** for Japan or a **"Thermal Prediction Loop"** for Europe to see the autonomous pipeline in action.
+
+### 3. Launch the API Backend (Lovable)
+```bash
+uvicorn sensi_workspace.api:app --reload
+```
 
 ## 🔐 Security & Reliability
+- **Absolute Secrets Separation:** All keys are managed via `.env` and never hardcoded.
 - **Sandboxed Telemetry:** No direct access to raw sensor networks; all data flows through validated MCP tools.
 - **Self-Healing Runtime:** Autonomous error detection and code repair for 24/7 mission-critical uptime.
-- **Signed Dispatch:** Every life-safety alert is cryptographically signed for authenticity.
 
 ---
 *Developed for the Kaggle 5-Day AI Agents: Intensive Vibe Coding Capstone Project.*

@@ -3,85 +3,82 @@ import os
 import sys
 import subprocess
 import re
+from typing import Dict, List, Any
 
-# Add project root to sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+# Ensure project root is in path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 from sensi_workspace.agents.guard_node import SecurityGuardNode
 
-class SensiHazardOrchestrator:
+class SensiOrchestrator:
+    """
+    Production-grade Orchestrator for Lovable Full-Stack Integration.
+    Coordinates between MCP Telemetry and Generative Media Skills.
+    """
+
     def __init__(self):
         self.guard = SecurityGuardNode()
-        print("⚡ [Sensi Orchestrator] Life-Safety Topology Layer Active.")
+        self.mcp_server_path = "sensi_workspace/mcp_server/server.py"
 
-    def _call_mcp(self, tool_name, arguments):
-        cmd = [sys.executable, "sensi_workspace/mcp_server/server.py", tool_name, json.dumps(arguments)]
+    def _call_mcp(self, tool_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+        cmd = [sys.executable, self.mcp_server_path, tool_name, json.dumps(args)]
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
-            raise Exception(f"MCP Tool Error: {result.stderr}")
+            raise Exception(f"MCP Error: {result.stderr}")
         return json.loads(result.stdout)
 
-    def analyze_hazard(self, location: str, hazard_type: str):
+    def trigger_hazard_analysis(self, location: str, hazard_type: str) -> Dict[str, Any]:
         logs = []
-        logs.append(f"📥 [Intent] Monitoring {hazard_type} risks in {location}")
+        logs.append(f"INBOUND: {hazard_type} monitoring requested for {location}")
 
-        # Step 1: Ingest Telemetry (MCP)
+        # 1. Telemetry Ingestion (MCP)
         try:
-            if hazard_type == "Earthquake":
+            if hazard_type.lower() == "earthquake":
                 telemetry = self._call_mcp("fetch_seismic_activity", {"location": location})
-                logs.append(f"🔍 [Logistics Agent] Seismic Data: Mag {telemetry['magnitude']} at {telemetry['depth_km']}km depth.")
             else:
                 telemetry = self._call_mcp("fetch_thermal_telemetry", {"location": location})
-                logs.append(f"🔍 [Logistics Agent] Thermal Data: {telemetry['temperature_c']}°C | Heat Index: {telemetry['heat_index']}.")
 
-            if telemetry["status"] == "CRITICAL":
-                logs.append(f"🚨 [ALERT] CRITICAL {hazard_type.upper()} THRESHOLD REACHED.")
-            else:
-                logs.append(f"✅ [Status] {hazard_type} levels within manageable parameters.")
-
+            logs.append(f"LOGISTICS: Telemetry ingested for {location} (Status: {telemetry['status']})")
         except Exception as e:
-            logs.append(f"❌ [Logistics Agent] Telemetry failure: {str(e)}")
-            return {"status": "FAILED", "logs": logs}
+            return {"success": False, "error": str(e), "logs": logs}
 
-        # Step 2: Generate Multi-Modal Broadcast (Skills)
-        logs.append(f"🎬 [Comms Agent] Mapping {hazard_type} telemetry to GenMedia Engine...")
-        skill_input = json.dumps({
-            "location": location,
-            "hazard_type": hazard_type,
-            "telemetry": telemetry
-        })
+        # 2. Safety Packaging (Skills via Guard Node)
+        skill_input = json.dumps({"location": location, "hazard_type": hazard_type, "telemetry": telemetry})
+        skill_path = "sensi_workspace/skills/broadcast_generation/scripts/generate_alert.py"
 
-        # Guard Node Monitoring
-        skill_output_raw = self.guard.execute_with_healing(
-            "sensi_workspace/skills/broadcast_generation/scripts/generate_alert.py",
-            [skill_input]
-        )
-
-        if not skill_output_raw:
-            logs.append("❌ [Security Guard Node] Skill failed after healing attempt.")
-            return {"status": "FAILED", "logs": logs}
+        skill_output_raw = self.guard.execute_with_healing(skill_path, [skill_input])
 
         try:
             match = re.search(r'\{.*\}', skill_output_raw.replace('\n', ' '))
             skill_output = json.loads(match.group())
-            logs.append(f"📢 [Comms Agent] Broadcast Package Ready: '{skill_output['alert_message']}'")
+            logs.append(f"COMMS: Multi-modal broadcast generated for {location}")
         except:
-            logs.append("❌ [Comms Agent] Failed to parse safety package.")
-            return {"status": "FAILED", "logs": logs}
+            return {"success": False, "error": "Skill Output Parsing Failed", "logs": logs}
 
-        # Step 3: Secure Dispatch (MCP)
+        # 3. Final Dispatch
         if skill_output["status"] == "SUCCESS":
-            logs.append(f"📡 [Sensi Orchestrator] Dispatching signed alert to {location} mesh network...")
             dispatch = self._call_mcp("dispatch_hazard_broadcast", {
                 "message": skill_output["alert_message"],
                 "signature": f"sha256_{skill_output['dispatch_id']}"
             })
-            logs.append(f"✅ [Guard Node] Dispatch verified. Hash: {dispatch['signed_hash']}")
-            return {"status": "DISPATCHED", "logs": logs, "output": skill_output, "dispatch": dispatch}
-        else:
-            logs.append("ℹ️ [Sensi Orchestrator] Threshold not met. System remains in active MONITORING mode.")
-            return {"status": "MONITORING", "logs": logs, "output": skill_output}
+            logs.append(f"ORCHESTRATOR: Signed Alert Dispatched (Hash: {dispatch['signed_hash']})")
+            return {
+                "success": True,
+                "status": "DISPATCHED",
+                "logs": logs,
+                "telemetry": telemetry,
+                "alert": skill_output,
+                "dispatch": dispatch
+            }
 
-if __name__ == "__main__":
-    orch = SensiHazardOrchestrator()
-    print(json.dumps(orch.analyze_hazard("Japan", "Earthquake"), indent=2))
+        return {
+            "success": True,
+            "status": "MONITORING",
+            "logs": logs,
+            "telemetry": telemetry
+        }
+
+# Global Instance
+orchestrator = SensiOrchestrator()

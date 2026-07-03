@@ -6,27 +6,28 @@ import sys
 # Ensure imports work
 sys.path.append(os.path.abspath(os.getcwd()))
 
-from sensi_workspace.agents.orchestrator import SensiHazardOrchestrator
+from sensi_workspace.agents.orchestrator import SensiOrchestrator
 
-orchestrator = SensiHazardOrchestrator()
+orchestrator = SensiOrchestrator()
 
 def run_hazard_monitor(location, hazard_type):
-    result = orchestrator.analyze_hazard(location, hazard_type)
+    result = orchestrator.trigger_hazard_analysis(location, hazard_type)
 
     log_display = "\n".join(result["logs"])
 
-    if result["status"] == "DISPATCHED":
-        output = result["output"]
+    if result.get("success") and result["status"] == "DISPATCHED":
+        alert = result["alert"]
         dispatch = result["dispatch"]
         status_md = f"### 🚨 {hazard_type.upper()} ALERT DISPATCHED\n**Target:** {location}\n**Signature:** `{dispatch['signed_hash']}`"
-        msg_md = f"#### 📢 Broadcast Message\n> {output['alert_message']}"
-        media_md = f"#### 🎬 GenMedia Visual (Veo)\n- **Prompt:** {output['media_config']['prompt']}\n- **Resolution:** 1080p"
+        msg_md = f"#### 📢 Broadcast Message\n> {alert['alert_message']}"
+        media_md = f"#### 🎬 GenMedia Visual (Veo)\n- **Prompt:** {alert['media_config']['prompt']}\n- **Resolution:** 1080p"
         return log_display, status_md, msg_md, media_md
-    elif result["status"] == "MONITORING":
+    elif result.get("success") and result["status"] == "MONITORING":
         status_md = f"### 🟢 System Status: MONITORING\nNo critical {hazard_type} thresholds exceeded in {location}."
         return log_display, status_md, "", ""
     else:
-        return log_display, "### ❌ System Failure", "", ""
+        error_msg = result.get("error", "Unknown System Error")
+        return log_display, f"### ❌ System Failure\n{error_msg}", "", ""
 
 custom_css = """
 .gradio-container { background-color: #0d1117; color: #c9d1d9; }
