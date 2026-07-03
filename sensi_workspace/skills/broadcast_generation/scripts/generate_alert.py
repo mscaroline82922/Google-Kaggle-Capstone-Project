@@ -1,40 +1,46 @@
-import sys
 import json
+import sys
+import hashlib
 
-def process_and_generate_broadcast(input_json: str):
+def process_hazard_and_generate_broadcast(input_json: str):
     """
-    Processes telemetry data and generates a simulated multi-modal broadcast.
+    Processes seismic/thermal data and generates a life-safety broadcast package.
     """
     try:
-        input_data = json.loads(input_json)
-        zone = input_data.get("zone", "Unknown")
-        urgency = input_data.get("urgency", "NORMAL")
+        data = json.loads(input_json)
+        location = data.get("location", "Unknown")
+        hazard_type = data.get("hazard_type", "General")
+        telemetry = data.get("telemetry", {})
 
-        print(f"🔄 Processing structural degradation metrics for {zone}...")
-        print(f"⚠️ Urgency Level: {urgency}")
+        status = telemetry.get("status", "NORMAL")
 
-        # Simulate interaction with GenMedia Engine (Gemini/Veo)
-        print("🎬 Simulating Veo Video Prompt Mapping: 'High-fidelity cinematic 1080p aerial view of safe evacuation path through Sector 7, clear marker flags, hyper-realistic, 30fps'...")
+        # High-Fidelity Prompt Engineering for Veo (Simulated)
+        if hazard_type == "Earthquake":
+            veo_prompt = f"1080p aerial cinematic view of {location}, stable evacuation routes highlighted in glowing green, structural risk zones in red pulse, hyper-realistic."
+            alert_msg = f"URGENT: Magnitude {telemetry.get('magnitude')} earthquake detected in {location}. Evacuate to open areas immediately."
+        elif hazard_type == "Heatwave":
+            veo_prompt = f"Thermal heatmap visualization of {location} city streets, cooling centers highlighted, safety advisory overlays, 4K resolution."
+            alert_msg = f"HEAT ADVISORY: Temperatures in {location} reaching {telemetry.get('temperature_c')}°C. Seek shade and cooling centers."
+        else:
+            veo_prompt = "Generic safety visual."
+            alert_msg = "Stay alert for environmental updates."
 
         output = {
-            "status": "SUCCESS",
-            "zone": zone,
-            "media_assets": [
-                {"type": "video", "url": f"https://cdn.sensi.ai/assets/{zone}_evac.mp4", "resolution": "1080p"},
-                {"type": "image", "url": f"https://cdn.sensi.ai/assets/{zone}_map.png"}
-            ],
-            "broadcast_message": f"EMERGENCY ALERT: {zone} evacuation in progress. Follow visual markers."
+            "status": "SUCCESS" if status != "NORMAL" else "MONITORING",
+            "alert_message": alert_msg,
+            "media_config": {
+                "engine": "Veo",
+                "prompt": veo_prompt,
+                "resolution": "1080p"
+            },
+            "dispatch_id": hashlib.sha256(alert_msg.encode()).hexdigest()[:16]
         }
 
         return json.dumps(output)
     except Exception as e:
-        print(f"Error in broadcast generation: {e}", file=sys.stderr)
+        print(f"Error in hazard skill: {e}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        print(process_and_generate_broadcast(sys.argv[1]))
-    else:
-        # Default mock execution
-        mock_input = json.dumps({"zone": "Sector_7", "urgency": "CRITICAL"})
-        print(process_and_generate_broadcast(mock_input))
+        print(process_hazard_and_generate_broadcast(sys.argv[1]))
